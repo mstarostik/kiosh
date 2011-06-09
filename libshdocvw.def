@@ -1,0 +1,7 @@
+; Import ordinal 125 from shdocvw.  That function will visit each
+; subkey of the Active Setup "Installed Components" and run the stubs
+; that haven't run yet for the current user.
+
+LIBRARY shdocvw.dll
+EXPORTS
+    RunInstallUninstallStubs@0 @125 NONAME
