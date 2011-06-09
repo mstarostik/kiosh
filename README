@@ -1,0 +1,15 @@
+kiosh - Kiosk Shell
+
+Nothing fancy, really.  On a Windows system you can easily configure something
+else than explorer.exe as a shell which comes in handy for kiosk applications
+and the likes.  One problem of this approach is that it not only removes the
+desktop and task bar, but also skips some session initialization that is
+normally performed by explorer.exe.  The most important of such initializations
+to me is to run Active Setup per-user installation stubs.  When deploying
+software to such systems, some things need to be run once for each new and
+existing user account.  Active Setup can handly this quite nicely, but its stubs
+are only run if the defaul shell - explorer.exe - is used.  Enter kiosh.  It
+basically just calls out to an undocumented(?) API to let Active Setup do its
+job and then launches the actual (kiosk) application.
+
+Have fun!
