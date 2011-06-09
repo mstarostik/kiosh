@@ -4,4 +4,7 @@
 
 LIBRARY shdocvw.dll
 EXPORTS
+; x86
     RunInstallUninstallStubs@0 @125 NONAME
+; x86_64
+    RunInstallUninstallStubs @125 NONAME

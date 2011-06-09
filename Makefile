@@ -3,22 +3,47 @@
 # If you use a different toolchain, feel free to contribute a
 # more generic makefile
 
-CC = i686-pc-mingw32-gcc
-LD = i686-pc-mingw32-gcc
-DLLTOOL = i686-pc-mingw32-dlltool
+ABIS := 32 64
+BUILDDIR := build
 
-CFLAGS = -DUNICODE
+CC_32 := i686-pc-mingw32-gcc
+LD_32 := i686-pc-mingw32-gcc
+DLLTOOL_32 = i686-pc-mingw32-dlltool
+
+CC_64 := x86_64-pc-mingw32-gcc
+LD_64 := x86_64-pc-mingw32-gcc
+DLLTOOL_64 := x86_64-pc-mingw32-dlltool
+
+CC = $(CC_$(ABI))
+LD = $(LD_$(ABI))
+DLLTOOL = $(DLLTOOL_$(ABI))
+O = $(BUILDDIR)/$(ABI)
+
+CFLAGS = -DUNICODE -Wall
 LDFLAGS = -mwindows -municode
+
+OBJS = main.o libshdocvw.a
 
 .PHONY: all clean
 
-all: kiosh.exe
+ifeq ($(ABI),)
+all:
+	@for i in $(ABIS); do $(MAKE) ABI=$$i || exit 1; done
+else
+all: $(BUILDDIR)/$(ABI)/kiosh.exe
+endif
 
 clean:
-	rm -f kiosh.exe *.o *.a
+	rm -rf $(BUILDDIR)O = $(BUILDDIR)/$(ABI)
 
-kiosh.exe: main.o libshdocvw.a
+
+$(O)/kiosh.exe: $(addprefix $(O)/,$(OBJS))
 	$(LD) $(LDFLAGS) -o $@ $^
 
-%.a: %.def
+$(O)/%.o: %.c
+	@mkdir -p $(O)
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+$(O)/%.a: %.def
+	@mkdir -p $(O)
 	$(DLLTOOL) -l $@ -d $<

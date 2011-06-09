@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     }
 
     RunInstallUninstallStubs();
-    _spawnvp(_P_NOWAIT, argv[1], argv + 1);
+    _spawnvp(_P_NOWAIT, argv[1], (const char *const *)argv + 1);
 
     return EXIT_SUCCESS;
 }
