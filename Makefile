@@ -6,23 +6,22 @@
 ABIS := 32 64
 BUILDDIR := build
 
-CC_32 := i686-pc-mingw32-gcc
-LD_32 := i686-pc-mingw32-gcc
-DLLTOOL_32 = i686-pc-mingw32-dlltool
+ifeq ($(ABI),64)
+CHOST = x86_64-pc-mingw32-
+endif
+ifeq ($(ABI),32)
+CHOST = i686-pc-mingw32-
+endif
 
-CC_64 := x86_64-pc-mingw32-gcc
-LD_64 := x86_64-pc-mingw32-gcc
-DLLTOOL_64 := x86_64-pc-mingw32-dlltool
-
-CC = $(CC_$(ABI))
-LD = $(LD_$(ABI))
-DLLTOOL = $(DLLTOOL_$(ABI))
+CXX = $(CHOST)g++
+LD = $(CHOST)g++
+DLLTOOL = $(CHOST)dlltool
 O = $(BUILDDIR)/$(ABI)
 
-CFLAGS = -DUNICODE -Wall
-LDFLAGS = -mwindows -municode
+CXXFLAGS = -std=gnu++0x -DUNICODE -Wall
+LDFLAGS = -mwindows -municode -static-libgcc
 
-OBJS = main.o libshdocvw.a
+OBJS = main.o library_loader.o
 
 .PHONY: all clean
 
@@ -31,6 +30,7 @@ all:
 	@for i in $(ABIS); do $(MAKE) ABI=$$i || exit 1; done
 else
 all: $(BUILDDIR)/$(ABI)/kiosh.exe
+-include $(OBJS:%.o=$(O)/%.d)
 endif
 
 clean:
@@ -40,10 +40,6 @@ clean:
 $(O)/kiosh.exe: $(addprefix $(O)/,$(OBJS))
 	$(LD) $(LDFLAGS) -o $@ $^
 
-$(O)/%.o: %.c
+$(O)/%.o: %.cpp Makefile
 	@mkdir -p $(O)
-	$(CC) -c $(CFLAGS) -o $@ $<
-
-$(O)/%.a: %.def
-	@mkdir -p $(O)
-	$(DLLTOOL) -l $@ -d $<
+	$(CXX) -c -MMD $(CXXFLAGS) -o $@ $<

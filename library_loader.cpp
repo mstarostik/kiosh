@@ -18,20 +18,12 @@
     along with kiosh.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <windows.h>
+#include "library_loader.hpp"
 
-void WINAPI __declspec(dllimport) RunInstallUninstallStubs();
+library_loader::library_loader(const std::wstring& name)
+    : h{LoadLibrary(name.c_str()), FreeLibrary} {
+}
 
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-	MessageBox(0, L"Usage: kiosh <command to run>", L"kiosh", MB_ICONERROR);
-	return EXIT_FAILURE;
-    }
-
-    RunInstallUninstallStubs();
-    _spawnvp(_P_NOWAIT, argv[1], (const char *const *)argv + 1);
-
-    return EXIT_SUCCESS;
+library_loader::library_loader(const wchar_t* name)
+    : h{LoadLibrary(name), FreeLibrary} {
 }
