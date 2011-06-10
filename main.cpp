@@ -27,9 +27,12 @@
 void runInstallUninstallStubs() {
     if (library_loader shell32 = {L"shell32.dll"}) {
 	// Windows 7 x86_64 at least
-	if (auto RunInstallUninstallStubs2 = shell32.symbol< void, int >(885)) RunInstallUninstallStubs2(0);
+	if (auto RunInstallUninstallStubs2 = shell32.symbol< void, int >(885)) {
+	    RunInstallUninstallStubs2(0);
+	    return;
+	}
     }
-    else if (library_loader shdocvw = {L"shdocvw.dlL"}) {
+    if (library_loader shdocvw = {L"shdocvw.dlL"}) {
 	// XP x86 at least
 	if (auto RunInstallUninstallStubs = shdocvw.symbol< void >(125)) RunInstallUninstallStubs();
     }
