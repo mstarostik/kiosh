@@ -34,7 +34,7 @@ all: $(BUILDDIR)/$(ABI)/kiosh.exe
 endif
 
 clean:
-	rm -rf $(BUILDDIR)O = $(BUILDDIR)/$(ABI)
+	rm -rf $(BUILDDIR)
 
 
 $(O)/kiosh.exe: $(addprefix $(O)/,$(OBJS))
