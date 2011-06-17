@@ -27,39 +27,56 @@
 
 #include <windows.h>
 
+class library_loader;
+
+// Can't use std::function as it doesn't support WINAPI (__attribute__((__stdcall__)) on Win32)
+namespace {
+    template< typename T >
+    struct function_traits;
+
+    template< typename Ret, typename... Args >
+    struct function_traits< Ret(Args...) > {
+	typedef Ret return_type;
+    };
+
+#if !defined(__WIN64__)
+    template< typename Ret, typename... Args >
+    struct function_traits< Ret WINAPI(Args...) > {
+	typedef Ret return_type;
+    };
+#endif
+
+    template< typename F >
+    struct function {
+	// Can't use decltype foo because of GCC ICE.  FIXME: check if this still a problem with GCC > 4.4.5? and if so, file a bug
+	template< typename... Args >
+	typename function_traits< F >::return_type operator ()(Args&&... args) const { return this->f(std::forward< Args >(args)...); }
+
+	/*explicit*/ operator bool() const { return this->f; }
+
+    private:
+	friend class ::library_loader;
+	template< typename G >
+	function(G* g) : f{reinterpret_cast< F* >(g)} {}
+	F* f;
+    };
+}
+
 class library_loader
 {
 public:
     library_loader(const std::wstring& name);
     library_loader(const wchar_t* name);
 
-    operator bool() const { return h; }
+    /*explicit*/ operator bool() const { return h; }
 
-    template< typename Ret, typename... Args >
-    struct function
-    {
-	typedef WINAPI Ret (*F)(Args...);
-
-	function(F _f) : f{_f} {}
-
-	operator bool() const { return f; }
-	Ret operator ()(Args... args) const { return f(args...); }
-
-    private:
-	friend class library_loader;
-	template< typename Generic >
-	function(Generic _f) : f{reinterpret_cast< F >(_f)} {}
-
-	F f;
-    };
-
-    template< typename Ret, typename... Args >
-    function< Ret, Args... > symbol(const std::string& name) {
+    template< typename F >
+    function< F > symbol(const std::string& name) const {
 	return GetProcAddress(h.get(), name.c_str());
     }
 
-    template< typename Ret, typename... Args >
-    function< Ret, Args... > symbol(unsigned int ordinal) {
+    template< typename F >
+    function< F > symbol(unsigned int ordinal) const {
 	return GetProcAddress(h.get(), reinterpret_cast< const char* >(ordinal));
     }
 

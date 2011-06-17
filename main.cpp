@@ -18,28 +18,47 @@
     along with kiosh.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
+#include <cstdlib>
+#include <sstream>
+#include <vector>
+
 #include <unistd.h>
 #include <windows.h>
 
 #include "library_loader.hpp"
 
+struct entry_point {
+    std::wstring library;
+    unsigned int ordinal;
+};
+
+std::vector< entry_point > candidates = {
+    {L"shell32.dll", 885}, // since Windows 7
+    {L"shdocvw.dll", 130}  // at least since Windows 2000
+};
+
 void runInstallUninstallStubs() {
-    if (library_loader shell32 = {L"shell32.dll"}) {
-	// Windows 7 x86_64 at least
-	if (auto RunInstallUninstallStubs2 = shell32.symbol< void, int >(885)) {
-	    RunInstallUninstallStubs2(0);
-	    return;
-	}
-    }
-    if (library_loader shdocvw = {L"shdocvw.dlL"}) {
-	// XP x86 at least
-	if (auto RunInstallUninstallStubs = shdocvw.symbol< void >(125)) RunInstallUninstallStubs();
-    }
+    for (auto it = candidates.begin(); it != candidates.end(); ++it)
+	if (library_loader loader = {it->library})
+	    if (auto RunInstallUninstallStubs2 = loader.symbol< void WINAPI (const wchar_t*) >(it->ordinal)) {
+		RunInstallUninstallStubs2(static_cast< const wchar_t* >(0)); // Yuck...
+		return;
+	    }
 }
 
 
 int main(int argc, char *argv[]) {
+#ifndef __WIN64__
+    if (library_loader loader = {L"kernel32.dll"})
+	if (auto IsWow64Process = loader.symbol< BOOL WINAPI (HANDLE, BOOL*) >("IsWow64Process")) {
+	    BOOL runningOn64 = false;
+	    if (IsWow64Process(GetCurrentProcess(), &runningOn64) && runningOn64) {
+		MessageBox(0, L"The 32-bit version of kiosh will not work on a 64-bit OS.  Please use the 64-bit version instead.", L"kiosh", MB_ICONERROR);
+		return EXIT_FAILURE;
+	    }
+	}
+#endif
+
     if (argc < 2) {
 	MessageBox(0, L"Usage: kiosh <command to run>", L"kiosh", MB_ICONERROR);
 	return EXIT_FAILURE;
