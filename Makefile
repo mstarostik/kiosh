@@ -3,6 +3,6 @@ LDFLAGS = -mwindows -municode -static-libgcc
 
 BINARIES = kiosh.exe
 
-kiosh.exe_SOURCES = library_loader.cpp main.cpp
+kiosh.exe_SOURCES = event.cpp library_loader.cpp main.cpp os_version.cpp
 
 include build/win-multi.mak

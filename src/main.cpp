@@ -25,7 +25,9 @@
 #include <unistd.h>
 #include <windows.h>
 
+#include "event.hpp"
 #include "library_loader.hpp"
+#include "os_version.hpp"
 
 struct entry_point {
     std::wstring library;
@@ -66,7 +68,27 @@ int main(int argc, char *argv[]) {
 
     runInstallUninstallStubs();
 
-    _spawnvp(_P_NOWAIT, argv[1], (const char *const *)argv + 1);
+    event(os_version().major() >= 6 ? L"ShellDesktopSwitchEvent" : L"msgina: ShellReadyEvent").set();
+
+    // FIXME: As Windows lacks anything that even remotely resembles sane quote handling wrt command line arguments,
+    //        we don't pretend to really get it right.  We just remove what looks like being the first word (i.e. argv[0])
+    //        and pass the rest untouched.
+    std::wstring cmd = {GetCommandLine()};
+    if (cmd.empty()) {
+	MessageBox(0, L"Internal error", L"kiosh", MB_ICONERROR);
+	return EXIT_FAILURE;
+    }
+    std::size_t p = cmd.find(cmd[0] == L'"' ? L'"' : L' ', 1);
+    if (p == cmd.npos) {
+	MessageBox(0, L"Invalid command line", L"kiosh", MB_ICONERROR);
+	return EXIT_FAILURE;
+    }
+    cmd.erase(0, p + 1);
+
+    // FIXME: Get this ugliness out of the main application code
+    STARTUPINFO si = {cb: sizeof(si)};
+    PROCESS_INFORMATION pi;
+    CreateProcess(0, const_cast< wchar_t* >(cmd.c_str()), 0, 0, FALSE, 0, 0, 0, &si, &pi);
 
     return EXIT_SUCCESS;
 }
